@@ -22,7 +22,6 @@ A late-fusion neural network framework for automated, real-time psychological st
 - [File Structure](#file-structure)
 - [Installation and Local Execution](#installation-and-local-execution)
 - [Future Scope](#future-scope)
-- [License](#license)
 
 ---
 
