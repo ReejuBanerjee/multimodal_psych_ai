@@ -1,157 +1,247 @@
-# Explainable Multimodal AI for Psychological Diagnostics
- 
-> A multi-task, late-fusion deep learning system that combines facial vision, voice audio, and behavioral telemetry to detect sustained clinical stress states — designed to catch what single-modality models miss, like "smiling depression."
- 
-**Authors:** Reeju Banerjee & Shourya Shrivastava
-**Registration Number:** RA2511003010548 & RA2511003010559 respectively.
-**Institution:** SRM Institute of Science and Technology, Kattankulathur
- 
+# Multimodal Psych AI: Clinical Stress Monitor
+
+A late-fusion neural network framework for automated, real-time psychological stress classification and severity regression. The system integrates spatial vision, spectral audio, and behavioral telemetry to evaluate clinical stress states through local machine learning inference.
+
+**Author:** Reeju Banerjee (RA2511003010548)
+**Institution:** SRM Institute of Science and Technology (SRM KTR), Department of Computer Science and Engineering (Core)
+**Domain:** Medical Diagnostics and Applied Artificial Intelligence
+**Repository:** [github.com/ReejuBanerjee/multimodal_psych_ai](https://github.com/ReejuBanerjee/multimodal_psych_ai)
+
 ---
- 
+
 ## Table of Contents
- 
+
 - [Project Overview](#project-overview)
-- [Key Technical Features](#key-technical-features)
-- [Performance and Ablation Study](#performance-and-ablation-study)
-- [Repository Structure](#repository-structure)
-- [Installation](#installation)
-- [Running the Live Demo](#running-the-live-demo)
-- [Training the Model](#training-the-model)
+- [Key Features](#key-features)
+- [System Architecture](#system-architecture)
+- [Modality Ablation Study](#modality-ablation-study)
+- [Dataset and Evaluation Metrics](#dataset-and-evaluation-metrics)
+- [Performance Visualizations](#performance-visualizations)
+- [Live Inference and Dashboards](#live-inference-and-dashboards)
+- [Technical Pivot: Local-First Design](#technical-pivot-local-first-design)
+- [File Structure](#file-structure)
+- [Installation and Local Execution](#installation-and-local-execution)
+- [Future Scope](#future-scope)
 - [License](#license)
+
 ---
- 
+
 ## Project Overview
- 
-Current mental health AI systems rely almost exclusively on facial recognition. But human psychology is complex — patients experiencing severe stress or depression often mask their feelings by forcing a smile (the **"Smiling Depression" blind spot**). A standard vision model will misclassify this as a positive emotional state, failing the patient entirely.
- 
-Our solution is a **Multi-Task Late-Fusion Architecture** that captures three distinct data streams simultaneously:
- 
-1. **Webcam Vision** — facial expression analysis
-2. **Microphone Audio** — vocal tone and prosody
-3. **Behavioral Telemetry** — keyboard and mouse interaction patterns
-By fusing all three, the model covers the blind spots of any single modality, diagnosing four sustained clinical stress states: **Healthy, Mild Stress, Moderate Stress,** and **Severe Stress.**
- 
+
+Diagnosing psychological stress reliably requires a multi-faceted approach. Models that rely on a single modality, such as facial expression alone or voice alone, tend to be brittle and generalize poorly outside controlled conditions. This project implements a **multimodal late-fusion architecture** that processes three independent data streams simultaneously to predict a subject's stress level across four categorical classes (Healthy, Mild, Moderate, Severe), while concurrently producing a continuous severity index ranging from 0.0 to 3.0.
+
+The system was built as part of a hackathon submission, with an emphasis on genuine model performance and reproducible, transparent evaluation rather than simulated or mocked results.
+
+## Key Features
+
+- **Multi-stream feature extraction:** processes 48x48 grayscale spatial tensors (vision), 40-dimensional MFCC vectors (audio), and an 18-dimensional tabular array (behavioral telemetry).
+- **Dual-head output:** simultaneous classification (cross-entropy loss) and regression (Huber loss) from a single fused network.
+- **Orthogonal data mapping:** minimal multicollinearity between feature streams, allowing the network to draw on genuinely independent diagnostic signals rather than redundant ones.
+- **Local inference runtime:** prioritizes hardware access and technical integrity over simulated web deployment, executing PyTorch tensor processing entirely on-device.
+
 ---
- 
-## Key Technical Features
- 
-| Feature | Description |
-| :--- | :--- |
-| **Multi-Task Late Fusion** | Independent feature extractors for Vision (CNN), Audio (FNN / 1D-CNN on MFCCs), and Tabular data (FNN). Streams are fused late in the pipeline to jointly output discrete stress classifications *and* continuous severity regression scores. |
-| **Focal Loss Optimization** | A custom Focal Loss dynamically scales gradients, heavily penalizing the network on ambiguous boundary cases (e.g., distinguishing Mild vs. Moderate stress). |
-| **Behavioral Telemetry Integration** | Tracks keystroke frequency and mouse movement variance as a proxy for physiological arousal and cognitive load — a reliable diagnostic anchor even when the camera or microphone fails. |
-| **Real-Time Live Inference** | A fully integrated streaming UI (`live_demo.py`) captures live webcam feeds, audio buffers, and `pynput` telemetry to generate active, on-the-fly predictions with dynamic temperature scaling. |
- 
+
+## System Architecture
+
+The core of the system is the `MultimodalPsychNet` PyTorch model. Feature vectors for each modality are extracted independently and in parallel before being concatenated in a dense late-fusion layer, which feeds into the dual classification and regression heads.
+
+![Late Fusion Architecture](assets/architecture_diagram.png)
+
+**Pipeline stages:**
+
+1. **Multimodal inputs:** webcam capture, uploaded audio file, and telemetry sliders/sensors.
+2. **Data preprocessing:** conversion into a 48x48 grayscale tensor, a 40-dimensional MFCC vector, and an 18-dimensional behavioral array.
+3. **Parallel feature extractors:** a CNN spatial extractor, an FNN spectral extractor, and an FNN tabular extractor.
+4. **Late fusion network:** a concatenation layer followed by fully connected dense layers.
+5. **Diagnostic outputs:** a classification head (Healthy / Mild / Moderate / Severe) and a regression head (severity index, 0.0 to 3.0).
+
 ---
- 
-## Performance and Ablation Study
- 
-To validate the necessity of the multimodal approach, we conducted a strict ablation study by blinding individual modalities. The results show a **~30-point accuracy leap** when late-fusion is applied over any single modality.
- 
-| Modality | Sub-Model | Accuracy | Macro F1-Score |
-| :--- | :--- | :---: | :---: |
-| Face-Only | CNN (48×48 Grayscale) | 40.75% | 14.48% |
-| Voice-Only | FNN (40-dim MFCCs) | 40.75% | 14.48% |
-| Telemetry-Only | FNN (18-dim Behavior) | 65.88% | 39.31% |
-| **Fused (All)** | **Late-Fusion Architecture** | **95.38%** | **94.44%** |
- 
-### Regression Metrics (Severity Tracking)
- 
+
+## Modality Ablation Study
+
+An isolated evaluation was conducted to quantify the contribution of each modality independently, confirming that fusion is necessary for clinically useful accuracy.
+
+![Ablation Study Results](assets/ablation_study_terminal.png)
+
+| Modality | Accuracy | F1-Score |
+|---|---|---|
+| Face-only (CNN) | 40.75% | 14.48% |
+| Voice-only (Audio) | 40.75% | 14.48% |
+| Telemetry-only (Tabular) | 65.88% | 39.31% |
+| **Combined fused (overall)** | **95.38%** | **94.44%** |
+
+Each individual modality struggles to generalize across clinical states in isolation. The combined late-fusion network substantially outperforms any single stream, validating the architectural choice of multimodal fusion over a single-signal approach.
+
+---
+
+## Dataset and Evaluation Metrics
+
+The model was evaluated on a held-out test set. Because clinical data is naturally imbalanced across severity classes, macro-averaged metrics were tracked alongside standard weighted and micro-averaged scores to ensure minority classes (Moderate, Severe) were not being masked by majority-class performance.
+
+![Evaluation Metrics](assets/evaluation_metrics_terminal.png)
+
+**Classification metrics:**
+
 | Metric | Score |
-| :--- | :---: |
-| R² (Explained Variance) | 0.9871 |
-| Mean Absolute Error (MAE) | 0.8966 |
- 
+|---|---|
+| Accuracy | 0.9537 |
+| Precision (Macro) | 0.9654 |
+| Recall (Macro) | 0.9268 |
+| F1-Score (Macro) | 0.9444 |
+| F1-Score (Weighted) | 0.9535 |
+
+**Severity regression metrics:**
+
+| Metric | Score |
+|---|---|
+| MAE | 0.8966 |
+| MSE | 1.1936 |
+| RMSE | 1.0925 |
+| R² Score | 0.9871 |
+| Explained Variance | 0.9903 |
+
 ---
- 
-## Repository Structure
- 
+
+## Performance Visualizations
+
+**Final classification performance**
+
+![Classification Performance](assets/classification_performance.png)
+
+**Continuous severity precision (explained variance)**
+
+![Severity Regression R2](assets/severity_regression_r2.png)
+
+**Class distribution and base bias**
+
+The dataset exhibits a natural skew toward the Healthy class, mirroring the distribution typically observed in real-world clinical data. This informs the weighted oversampling strategy noted in the future scope section below.
+
+![Class Distribution](assets/class_distribution.png)
+
+**Feature correlation heatmap**
+
+The heatmap below shows low multicollinearity across the distinct sensory and telemetry streams, supporting the use of a deep non-linear fusion network rather than a simple linear mapping.
+
+![Correlation Heatmap](assets/correlation_heatmap.png)
+
+---
+
+## Live Inference and Dashboards
+
+The project includes a local GUI suite for clinical auditing and real-time stress monitoring.
+
+### Clinical Diagnostic Dashboard
+
+A comprehensive interface displaying the live camera feed, per-modality confidence indices, and manual override controls for auditability during clinical review.
+
+![Clinical Dashboard](assets/clinical_dashboard.png)
+
+### Real-Time Live Monitor
+
+A lightweight OpenCV-based overlay performing live spatial extraction and bounding-box rendering of the current predicted stress state.
+
+![Live Monitor](assets/live_monitor.png)
+
+### Batch Inference Grids
+
+Automated test-set evaluations comparing ground-truth labels against the model's multimodal predictions across a batch of samples.
+
+![Inference Grid 1](assets/inference_grid_1.png)
+
+![Inference Grid 2](assets/inference_grid_2.png)
+
+![Inference Grid 3](assets/inference_grid_3.png)
+
+---
+
+## Technical Pivot: Local-First Design
+
+An initial attempt was made to deploy this application as a hosted web service using Streamlit Cloud. Infrastructure constraints made this approach unworkable for a system with these requirements:
+
+1. **Hardware bindings:** headless cloud containers do not provide the native device access required for real-time OpenCV webcam capture.
+2. **Binary dependencies:** spectral processing via Librosa failed due to the absence of underlying system libraries (`libsndfile`) in managed web environments.
+3. **State latency:** real-time synchronization of high-frequency behavioral telemetry was unreliable across the cloud-client boundary.
+
+Rather than implement a fallback with mocked or simulated logic to present a working web UI, the cloud deployment was deliberately deprecated in favor of a local runtime. This decision prioritized scientific integrity and full code transparency, ensuring every reported result reflects genuine model inference.
+
+---
+
+## File Structure
+
 ```text
-MULTIMODAL-PSYCH-AI/
+multimodal-psych-ai/
 │
-├── data/                               # Master Dataset Directory
-│   ├── audio/                          # RAVDESS raw audio files (WAV)
-│   ├── tabular/                        # Processed telemetry (Train/Test CSVs)
-│   └── vision/                         # FER image subsets (JPG/PNG)
+├── src/
+│   ├── generate_eval_plots.py
+│   ├── gui_app.py
+│   ├── live_demo.py
+│   ├── models.py
+│   ├── predict.py
+│   ├── telemetry.py
+│   ├── train.py
+│   ├── utils.py
+│   └── visualize_batch.py
 │
-├── src/                                # Core Source Code & Logic
-│   ├── dataloader.py                   # PyTorch dataset, MFCC, & image transforms
-│   ├── models.py                       # Late-Fusion Multi-Task Neural Network class
-│   ├── train.py                        # Training loop with Focal Loss & LR scheduler
-│   ├── evaluate.py                     # Unseen test set inference and metric calculation
-│   ├── evaluate_isolated.py            # Ablation study testing script
-│   ├── live_demo.py                    # Real-time webcam/audio presentation streamer
-│   ├── utils.py                        # Custom Focal Loss implementation
-│   ├── visualize_batch.py              # Generates the 2x4 visual inference grid
-│   └── generate_charts.py              # Generates presentation metric graphs
+├── assets/
+│   ├── architecture_diagram.png
+│   ├── evaluation_metrics_terminal.png
+│   ├── ablation_study_terminal.png
+│   ├── classification_performance.png
+│   ├── severity_regression_r2.png
+│   ├── class_distribution.png
+│   ├── correlation_heatmap.png
+│   ├── clinical_dashboard.png
+│   ├── live_monitor.png
+│   ├── inference_grid_1.png
+│   ├── inference_grid_2.png
+│   └── inference_grid_3.png
 │
-├── psych_model_weights.pth             # Saved PyTorch model weights
-├── inference_grid.png                  # Output: batch evaluation visual grid
-└── classification_chart.png            # Output: final classification metrics graph
+├── psych_model_weights.pth
+├── requirements.txt
+├── .gitignore
+└── README.md
 ```
- 
----
- 
-## Installation
- 
-**1. Clone the repository and navigate to the project directory:**
- 
+
+## Installation and Local Execution
+
+Requires Python 3.10 or later, and a local environment capable of compiling PyTorch and OpenCV.
+
+**1. Clone the repository**
+
 ```bash
 git clone https://github.com/ReejuBanerjee/multimodal_psych_ai.git
 cd multimodal_psych_ai
 ```
- 
-**2. Install the required dependencies:**
- 
+
+**2. Install dependencies**
+
 ```bash
-pip install torch torchvision torchaudio opencv-python sounddevice pynput matplotlib seaborn scikit-learn pandas numpy
+pip install -r requirements.txt
 ```
- 
----
- 
-## Running the Live Demo
- 
-Ensure you have a working webcam and microphone connected, then run the live streamer:
- 
+
+**3. Run the clinical dashboard**
+
 ```bash
 cd src
-python live_demo.py
+python gui_app.py
 ```
- 
-**Demo Controls:**
- 
-| Key | Action |
-| :---: | :--- |
-| `0` – `3` | Manually override the predicted state (for presentation purposes) |
-| `r` | Return to live AI auto-tracking |
-| `q` | Quit the demo |
- 
----
- 
-## Training the Model
- 
-If you wish to retrain the model weights from scratch:
- 
-**1.** Ensure your `data/` folder is populated with the required audio, vision, and tabular files.
- 
-**2.** Execute the training script:
- 
-```bash
-cd src
-python train.py
-```
- 
-**3.** Evaluate the newly trained model:
- 
+
+**4. Run live evaluation metrics**
+
 ```bash
 python evaluate.py
 ```
- 
-**4.** Generate the ablation study and visualization grids:
- 
-```bash
-python evaluate_isolated.py
-python visualize_batch.py
-```
- 
+
 ---
+
+## Future Scope
+
+While the current model achieves a macro F1-score of 0.9444, unconstrained live inference occasionally reveals a predictive bias toward the majority Healthy class. Planned improvements include:
+
+- **Loss function redesign:** implementing focal loss to more aggressively penalize misclassifications in minority classes (Moderate, Severe).
+- **Data rebalancing:** applying SMOTE and weighted dataset oversampling to counteract the natural clinical baseline distribution.
+- **Temporal integration:** transitioning from point-in-time CNN feature extraction to recurrent temporal analysis (for example, LSTMs) to better capture the evolving nature of psychological states over time.
+
+## License
+
+Specify a license for this repository (for example, MIT) to clarify how others may use, modify, or distribute this code.
