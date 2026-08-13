@@ -2,8 +2,8 @@
  
 > A multi-task, late-fusion deep learning system that combines facial vision, voice audio, and behavioral telemetry to detect sustained clinical stress states — designed to catch what single-modality models miss, like "smiling depression."
  
-**Authors:** Reeju Banerjee & Shourya
-**Registration Number:** RA2511003010548
+**Authors:** Reeju Banerjee & Shourya Shrivastava
+**Registration Number:** RA2511003010548 & RA2511003010559 respectively.
 **Institution:** SRM Institute of Science and Technology, Kattankulathur
  
 ---
