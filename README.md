@@ -240,3 +240,8 @@ While the current model achieves a macro F1-score of 0.9444, unconstrained live 
 - **Loss function redesign:** implementing focal loss to more aggressively penalize misclassifications in minority classes (Moderate, Severe).
 - **Data rebalancing:** applying SMOTE and weighted dataset oversampling to counteract the natural clinical baseline distribution.
 - **Temporal integration:** transitioning from point-in-time CNN feature extraction to recurrent temporal analysis (for example, LSTMs) to better capture the evolving nature of psychological states over time.
+
+## Additional Resources
+
+- [Full Code Documentation (Word)](docs/Code_Documentation.docx)
+- [Hackathon Presentation (PPTX)](docs/Hackathon_Presentation.pptx)
