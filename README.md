@@ -2,7 +2,7 @@
 
 A late-fusion neural network framework for automated, real-time psychological stress classification and severity regression. The system integrates spatial vision, spectral audio, and behavioral telemetry to evaluate clinical stress states through local machine learning inference.
 
-**Author:** Reeju Banerjee (RA2511003010548)
+**Authors:** Reeju Banerjee (RA2511003010548) and Shourya Shrivastava ([github.com/ShouryaShri](https://github.com/ShouryaShri))
 **Institution:** SRM Institute of Science and Technology (SRM KTR), Department of Computing Technologies (CTECH)
 **Domain:** Medical Diagnostics and Applied Artificial Intelligence
 **Repository:** [github.com/ReejuBanerjee/multimodal_psych_ai](https://github.com/ReejuBanerjee/multimodal_psych_ai)
@@ -245,3 +245,4 @@ While the current model achieves a macro F1-score of 0.9444, unconstrained live 
 
 - [Full Code Documentation (Word)](docs/Code_Documentation.docx)
 - [Hackathon Presentation (PPTX)](docs/Hackathon_Presentation.pptx)
+
